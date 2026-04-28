@@ -1,0 +1,38 @@
+{
+  "name": "fepf-api",
+  "version": "1.0.0",
+  "description": "Back-end API para FePF - Sistema de Gestão Financeira Pessoal",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon --exec tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "vercel-build": "echo 'Build completed'"
+  },
+  "keywords": [
+    "finance",
+    "api",
+    "mongodb",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-validator": "^7.2.2",
+    "mongoose": "^8.9.5",
+    "multer": "^2.1.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.13.5",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
