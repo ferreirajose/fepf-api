@@ -46,7 +46,28 @@ router.post(
       .withMessage('Recorrente deve ser booleano'),
     body('observacoes')
       .optional()
+      .trim(),
+    body('formaPagamento')
+      .optional()
+      .isIn(['dinheiro', 'debito', 'credito', 'pix'])
+      .withMessage('Forma de pagamento inválida'),
+    body('pago')
+      .optional()
+      .isBoolean()
+      .withMessage('Pago deve ser booleano'),
+    body('localizacao.latitude')
+      .optional()
+      .isFloat({ min: -90, max: 90 })
+      .withMessage('Latitude deve estar entre -90 e 90'),
+    body('localizacao.longitude')
+      .optional()
+      .isFloat({ min: -180, max: 180 })
+      .withMessage('Longitude deve estar entre -180 e 180'),
+    body('localizacao.endereco')
+      .optional()
       .trim()
+      .isLength({ max: 500 })
+      .withMessage('Endereço não pode ter mais de 500 caracteres')
   ],
   validate,
   criarDespesa
@@ -76,7 +97,28 @@ router.put(
     body('recorrente')
       .optional()
       .isBoolean()
-      .withMessage('Recorrente deve ser booleano')
+      .withMessage('Recorrente deve ser booleano'),
+    body('formaPagamento')
+      .optional()
+      .isIn(['dinheiro', 'debito', 'credito', 'pix'])
+      .withMessage('Forma de pagamento inválida'),
+    body('pago')
+      .optional()
+      .isBoolean()
+      .withMessage('Pago deve ser booleano'),
+    body('localizacao.latitude')
+      .optional()
+      .isFloat({ min: -90, max: 90 })
+      .withMessage('Latitude deve estar entre -90 e 90'),
+    body('localizacao.longitude')
+      .optional()
+      .isFloat({ min: -180, max: 180 })
+      .withMessage('Longitude deve estar entre -180 e 180'),
+    body('localizacao.endereco')
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Endereço não pode ter mais de 500 caracteres')
   ],
   validate,
   atualizarDespesa
