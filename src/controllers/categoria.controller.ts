@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 
 export const listarCategorias = async (_req: Request, res: Response): Promise<void> => {
   try {
-    const categorias = await Categoria.find().sort({ nome: 1 });
+    const categorias = await Categoria.find({ ativo: true }).sort({ nome: 1 });
     const response: ApiResponse = {
       success: true,
       data: categorias
