@@ -15,11 +15,28 @@ dotenv.config({ path: '.env.local' });
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:4200';
+
+// CORS configuration for multiple origins
+const allowedOrigins = [
+  'http://localhost:4200',
+  'https://fepf.vercel.app',
+  process.env.CORS_ORIGIN
+].filter(Boolean);
 
 app.use(cors({
-  origin: CORS_ORIGIN,
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -49,7 +66,7 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
-      console.log(`📡 CORS habilitado para: ${CORS_ORIGIN}`);
+      console.log(`📡 CORS habilitado para: ${allowedOrigins.join(', ')}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
     });
   } catch (error) {
