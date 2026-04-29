@@ -28,6 +28,7 @@ router.post(
   [
     body('nome').trim().notEmpty().withMessage('Nome é obrigatório'),
     body('tipo')
+      .optional()
       .isIn(['receita', 'despesa'])
       .withMessage('Tipo deve ser "receita" ou "despesa"'),
     body('cor')

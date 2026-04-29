@@ -67,7 +67,18 @@ export const buscarDespesaPorId = async (req: Request, res: Response): Promise<v
 
 export const criarDespesa = async (req: Request, res: Response): Promise<void> => {
   try {
-    const despesa = await Despesa.create(req.body);
+    const dadosDespesa = { ...req.body };
+
+    // Se não informou localização, usar coordenadas padrão
+    if (!dadosDespesa.localizacao || (!dadosDespesa.localizacao.latitude && !dadosDespesa.localizacao.longitude)) {
+      dadosDespesa.localizacao = {
+        latitude: -7.165104,
+        longitude: -34.855471,
+        endereco: '-7.165104, -34.855471'
+      };
+    }
+
+    const despesa = await Despesa.create(dadosDespesa);
     const despesaPopulada = await Despesa.findById(despesa._id)
       .populate('categoriaId', 'nome tipo cor')
       .populate('cartaoId', 'nome bandeira');
@@ -88,9 +99,20 @@ export const criarDespesa = async (req: Request, res: Response): Promise<void> =
 
 export const atualizarDespesa = async (req: Request, res: Response): Promise<void> => {
   try {
+    const dadosDespesa = { ...req.body };
+
+    // Se não informou localização, usar coordenadas padrão
+    if (dadosDespesa.localizacao && !dadosDespesa.localizacao.latitude && !dadosDespesa.localizacao.longitude) {
+      dadosDespesa.localizacao = {
+        latitude: -7.165104,
+        longitude: -34.855471,
+        endereco: '-7.165104, -34.855471'
+      };
+    }
+
     const despesa = await Despesa.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      dadosDespesa,
       { new: true, runValidators: true }
     )
       .populate('categoriaId', 'nome tipo cor')

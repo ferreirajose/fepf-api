@@ -3,7 +3,7 @@ import { TipoCategoria, SubcategoriaType } from '../types';
 
 export interface ICategoria extends Document {
   nome: string;
-  tipo: TipoCategoria;
+  tipo?: TipoCategoria;
   cor?: string;
   icone?: string;
   subcategorias?: SubcategoriaType[];
@@ -44,7 +44,7 @@ const CategoriaSchema = new Schema<ICategoria>(
     },
     tipo: {
       type: String,
-      required: [true, 'Tipo é obrigatório'],
+      required: false,
       enum: {
         values: ['receita', 'despesa'],
         message: '{VALUE} não é um tipo válido'

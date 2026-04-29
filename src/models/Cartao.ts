@@ -4,6 +4,7 @@ import { BandeiraCartao } from '../types';
 export interface ICartao extends Document {
   nome: string;
   bandeira: BandeiraCartao;
+  dono?: string;
   limite: number;
   diaVencimento: number;
   diaFechamento: number;
@@ -25,6 +26,11 @@ const CartaoSchema = new Schema<ICartao>(
         values: ['visa', 'mastercard', 'elo', 'amex', 'outra'],
         message: '{VALUE} não é uma bandeira válida'
       }
+    },
+    dono: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Nome do dono não pode ter mais de 100 caracteres']
     },
     limite: {
       type: Number,
