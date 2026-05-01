@@ -11,6 +11,7 @@ export interface IDespesa extends Document {
   valor: number;
   data: Date;
   categoriaId: mongoose.Types.ObjectId;
+  subcategoriaId?: string;
   cartaoId?: mongoose.Types.ObjectId;
   recorrente: boolean;
   observacoes?: string;
@@ -40,6 +41,10 @@ const DespesaSchema = new Schema<IDespesa>(
       type: Schema.Types.ObjectId,
       ref: 'Categoria',
       required: [true, 'Categoria é obrigatória']
+    },
+    subcategoriaId: {
+      type: String,
+      required: false
     },
     cartaoId: {
       type: Schema.Types.ObjectId,

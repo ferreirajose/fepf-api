@@ -15,16 +15,21 @@ const SubcategoriaSchema = new Schema<SubcategoriaType>(
   {
     id: {
       type: String,
-      required: true
+      required: false
     },
     nome: {
       type: String,
       required: [true, 'Nome da subcategoria é obrigatório'],
       trim: true
     },
+    icone: {
+      type: String,
+      trim: true,
+      default: 'tag'
+    },
     categoriaId: {
       type: String,
-      required: true
+      required: false
     },
     ativo: {
       type: Boolean,

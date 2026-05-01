@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import Categoria from '../models/Categoria';
+import Despesa from '../models/Despesa';
+import Receita from '../models/Receita';
 import { ApiResponse } from '../types';
 import mongoose from 'mongoose';
 
@@ -49,7 +51,30 @@ export const buscarCategoriaPorId = async (req: Request, res: Response): Promise
 
 export const criarCategoria = async (req: Request, res: Response): Promise<void> => {
   try {
-    const categoria = await Categoria.create(req.body);
+    const categoriaData = { ...req.body };
+
+    // Se houver subcategorias, gerar IDs automaticamente
+    if (categoriaData.subcategorias && Array.isArray(categoriaData.subcategorias)) {
+      categoriaData.subcategorias = categoriaData.subcategorias.map((sub: any) => ({
+        id: sub.id || new mongoose.Types.ObjectId().toString(),
+        nome: sub.nome,
+        icone: sub.icone || 'tag',
+        categoriaId: '', // Será preenchido após criar a categoria
+        ativo: sub.ativo !== undefined ? sub.ativo : true
+      }));
+    }
+
+    const categoria = await Categoria.create(categoriaData);
+
+    // Atualizar categoriaId das subcategorias após criação
+    if (categoria.subcategorias && categoria.subcategorias.length > 0) {
+      categoria.subcategorias = categoria.subcategorias.map(sub => ({
+        ...sub,
+        categoriaId: categoria._id.toString()
+      }));
+      await categoria.save();
+    }
+
     const response: ApiResponse = {
       success: true,
       data: categoria
@@ -66,9 +91,22 @@ export const criarCategoria = async (req: Request, res: Response): Promise<void>
 
 export const atualizarCategoria = async (req: Request, res: Response): Promise<void> => {
   try {
+    const categoriaData = { ...req.body };
+
+    // Se houver subcategorias, gerar IDs para as novas (sem id)
+    if (categoriaData.subcategorias && Array.isArray(categoriaData.subcategorias)) {
+      categoriaData.subcategorias = categoriaData.subcategorias.map((sub: any) => ({
+        id: sub.id || new mongoose.Types.ObjectId().toString(),
+        nome: sub.nome,
+        icone: sub.icone || 'tag',
+        categoriaId: sub.categoriaId || req.params.id,
+        ativo: sub.ativo !== undefined ? sub.ativo : true
+      }));
+    }
+
     const categoria = await Categoria.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      categoriaData,
       { new: true, runValidators: true }
     );
 
@@ -97,11 +135,10 @@ export const atualizarCategoria = async (req: Request, res: Response): Promise<v
 
 export const deletarCategoria = async (req: Request, res: Response): Promise<void> => {
   try {
-    const categoria = await Categoria.findByIdAndUpdate(
-      req.params.id,
-      { ativo: false },
-      { new: true }
-    );
+    const categoriaId = req.params.id;
+
+    // Verificar se a categoria existe
+    const categoria = await Categoria.findById(categoriaId);
 
     if (!categoria) {
       const response: ApiResponse = {
@@ -112,9 +149,18 @@ export const deletarCategoria = async (req: Request, res: Response): Promise<voi
       return;
     }
 
+    // Deletar todas as despesas associadas à categoria
+    await Despesa.deleteMany({ categoriaId: categoriaId });
+
+    // Deletar todas as receitas associadas à categoria
+    await Receita.deleteMany({ categoriaId: categoriaId });
+
+    // Deletar a categoria (isso também remove todas as subcategorias automaticamente)
+    await Categoria.findByIdAndDelete(categoriaId);
+
     const response: ApiResponse = {
       success: true,
-      data: { message: 'Categoria desativada com sucesso' }
+      data: { message: 'Categoria e todos os registros associados foram removidos com sucesso' }
     };
     res.json(response);
   } catch (error: any) {
@@ -128,12 +174,13 @@ export const deletarCategoria = async (req: Request, res: Response): Promise<voi
 
 export const adicionarSubcategoria = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nome } = req.body;
+    const { nome, icone } = req.body;
     const categoriaId = req.params.id;
 
     const subcategoria = {
       id: new mongoose.Types.ObjectId().toString(),
       nome,
+      icone: icone || 'tag',
       categoriaId,
       ativo: true
     };
@@ -170,7 +217,12 @@ export const adicionarSubcategoria = async (req: Request, res: Response): Promis
 export const atualizarSubcategoria = async (req: Request, res: Response): Promise<void> => {
   try {
     const { categoriaId, subcategoriaId } = req.params;
-    const { nome, ativo } = req.body;
+    const { nome, icone, ativo } = req.body;
+
+    const updateFields: any = {};
+    if (nome !== undefined) updateFields['subcategorias.$.nome'] = nome;
+    if (icone !== undefined) updateFields['subcategorias.$.icone'] = icone;
+    if (ativo !== undefined) updateFields['subcategorias.$.ativo'] = ativo;
 
     const categoria = await Categoria.findOneAndUpdate(
       {
@@ -178,10 +230,7 @@ export const atualizarSubcategoria = async (req: Request, res: Response): Promis
         'subcategorias.id': subcategoriaId
       },
       {
-        $set: {
-          'subcategorias.$.nome': nome !== undefined ? nome : undefined,
-          'subcategorias.$.ativo': ativo !== undefined ? ativo : undefined
-        }
+        $set: updateFields
       },
       { new: true, runValidators: true }
     );
@@ -213,6 +262,13 @@ export const deletarSubcategoria = async (req: Request, res: Response): Promise<
   try {
     const { categoriaId, subcategoriaId } = req.params;
 
+    // Deletar todas as despesas associadas à subcategoria
+    await Despesa.deleteMany({ subcategoriaId: subcategoriaId });
+
+    // Deletar todas as receitas associadas à subcategoria
+    await Receita.deleteMany({ subcategoriaId: subcategoriaId });
+
+    // Remover a subcategoria da categoria
     const categoria = await Categoria.findByIdAndUpdate(
       categoriaId,
       { $pull: { subcategorias: { id: subcategoriaId } } },
@@ -230,7 +286,7 @@ export const deletarSubcategoria = async (req: Request, res: Response): Promise<
 
     const response: ApiResponse = {
       success: true,
-      data: { message: 'Subcategoria removida com sucesso' }
+      data: { message: 'Subcategoria e todos os registros associados foram removidos com sucesso' }
     };
     res.json(response);
   } catch (error: any) {

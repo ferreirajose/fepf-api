@@ -5,6 +5,7 @@ export interface IReceita extends Document {
   valor: number;
   data: Date;
   categoriaId: mongoose.Types.ObjectId;
+  subcategoriaId?: string;
   recorrente: boolean;
   observacoes?: string;
 }
@@ -30,6 +31,10 @@ const ReceitaSchema = new Schema<IReceita>(
       type: Schema.Types.ObjectId,
       ref: 'Categoria',
       required: [true, 'Categoria é obrigatória']
+    },
+    subcategoriaId: {
+      type: String,
+      required: false
     },
     recorrente: {
       type: Boolean,

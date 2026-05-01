@@ -1,6 +1,7 @@
 export interface SubcategoriaType {
   id: string;
   nome: string;
+  icone?: string;
   categoriaId: string;
   ativo: boolean;
 }
