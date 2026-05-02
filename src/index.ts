@@ -10,6 +10,7 @@ import receitaRoutes from './routes/receita.routes';
 import cartaoRoutes from './routes/cartao.routes';
 import orcamentoRoutes from './routes/orcamento.routes';
 import importExportRoutes from './routes/import-export.routes';
+import financeiroRoutes from './routes/financeiro.routes';
 
 dotenv.config({ path: '.env.local' });
 
@@ -56,6 +57,7 @@ app.use('/api/receitas', receitaRoutes);
 app.use('/api/cartoes', cartaoRoutes);
 app.use('/api/orcamentos', orcamentoRoutes);
 app.use('/api', importExportRoutes);
+app.use('/api/financeiro', financeiroRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
