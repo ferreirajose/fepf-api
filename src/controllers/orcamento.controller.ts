@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Orcamento from '../models/Orcamento';
+import Despesa from '../models/Despesa';
 import { ApiResponse } from '../types';
 
 export const listarOrcamentos = async (req: Request, res: Response): Promise<void> => {
@@ -11,12 +12,44 @@ export const listarOrcamentos = async (req: Request, res: Response): Promise<voi
     if (ano) filtros.ano = parseInt(ano as string);
 
     const orcamentos = await Orcamento.find(filtros)
-      .populate('categoriaId', 'nome tipo cor')
+      .populate('categoriaId', 'nome tipo cor icone')
       .sort({ ano: -1, mes: -1 });
+
+    // Calcular valor gasto para cada orçamento
+    const orcamentosComGasto = await Promise.all(
+      orcamentos.map(async (orcamento) => {
+        const orcamentoObj = orcamento.toObject();
+
+        // Calcular data início e fim do mês
+        const dataInicio = new Date(orcamento.ano, orcamento.mes - 1, 1);
+        const dataFim = new Date(orcamento.ano, orcamento.mes, 0, 23, 59, 59);
+
+        // Buscar despesas pagas da categoria no período
+        const despesas = await Despesa.find({
+          categoriaId: orcamento.categoriaId,
+          data: {
+            $gte: dataInicio,
+            $lte: dataFim
+          },
+          pago: true
+        });
+
+        // Somar valores das despesas
+        const valorGasto = despesas.reduce((total, despesa) => total + despesa.valor, 0);
+
+        return {
+          ...orcamentoObj,
+          valorPlanejado: orcamento.valor,
+          valorGasto: valorGasto,
+          valorRestante: orcamento.valor - valorGasto,
+          percentualGasto: orcamento.valor > 0 ? (valorGasto / orcamento.valor) * 100 : 0
+        };
+      })
+    );
 
     const response: ApiResponse = {
       success: true,
-      data: orcamentos
+      data: orcamentosComGasto
     };
     res.json(response);
   } catch (error: any) {
@@ -31,7 +64,7 @@ export const listarOrcamentos = async (req: Request, res: Response): Promise<voi
 export const buscarOrcamentoPorId = async (req: Request, res: Response): Promise<void> => {
   try {
     const orcamento = await Orcamento.findById(req.params.id)
-      .populate('categoriaId', 'nome tipo cor');
+      .populate('categoriaId', 'nome tipo cor icone');
 
     if (!orcamento) {
       const response: ApiResponse = {
@@ -42,9 +75,36 @@ export const buscarOrcamentoPorId = async (req: Request, res: Response): Promise
       return;
     }
 
+    const orcamentoObj = orcamento.toObject();
+
+    // Calcular data início e fim do mês
+    const dataInicio = new Date(orcamento.ano, orcamento.mes - 1, 1);
+    const dataFim = new Date(orcamento.ano, orcamento.mes, 0, 23, 59, 59);
+
+    // Buscar despesas pagas da categoria no período
+    const despesas = await Despesa.find({
+      categoriaId: orcamento.categoriaId,
+      data: {
+        $gte: dataInicio,
+        $lte: dataFim
+      },
+      pago: true
+    });
+
+    // Somar valores das despesas
+    const valorGasto = despesas.reduce((total, despesa) => total + despesa.valor, 0);
+
+    const orcamentoComGasto = {
+      ...orcamentoObj,
+      valorPlanejado: orcamento.valor,
+      valorGasto: valorGasto,
+      valorRestante: orcamento.valor - valorGasto,
+      percentualGasto: orcamento.valor > 0 ? (valorGasto / orcamento.valor) * 100 : 0
+    };
+
     const response: ApiResponse = {
       success: true,
-      data: orcamento
+      data: orcamentoComGasto
     };
     res.json(response);
   } catch (error: any) {
