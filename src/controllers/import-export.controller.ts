@@ -18,10 +18,10 @@ export const importarDespesas = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    const data = XLSX.utils.sheet_to_json(worksheet, { raw: false });
 
     const result: ImportResult = {
       total: data.length,
@@ -52,15 +52,44 @@ export const importarDespesas = async (req: Request, res: Response): Promise<voi
           }
         }
 
-        await Despesa.create({
+        let subcategoriaId;
+        if (row.subcategoria && categoria.subcategorias) {
+          const subcategoria = categoria.subcategorias.find(
+            (sub: any) => sub.nome === row.subcategoria && sub.ativo
+          );
+          if (subcategoria) {
+            subcategoriaId = subcategoria.id;
+          }
+        }
+
+        const despesaData: any = {
           descricao: row.descricao,
           valor: parseFloat(row.valor),
           data: new Date(row.data),
           categoriaId: categoria._id,
           cartaoId,
+          subcategoriaId,
           recorrente: row.recorrente === true || row.recorrente === 'true',
           observacoes: row.observacoes
-        });
+        };
+
+        if (row.formaPagamento) {
+          despesaData.formaPagamento = row.formaPagamento;
+        }
+
+        if (row.pago !== undefined && row.pago !== null) {
+          despesaData.pago = row.pago === true || row.pago === 'true';
+        }
+
+        if (row.latitude && row.longitude) {
+          despesaData.localizacao = {
+            latitude: parseFloat(row.latitude),
+            longitude: parseFloat(row.longitude),
+            endereco: row.endereco || `${row.latitude}, ${row.longitude}`
+          };
+        }
+
+        await Despesa.create(despesaData);
 
         result.success++;
       } catch (error: any) {
@@ -97,10 +126,10 @@ export const importarReceitas = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    const data = XLSX.utils.sheet_to_json(worksheet, { raw: false });
 
     const result: ImportResult = {
       total: data.length,
@@ -123,11 +152,22 @@ export const importarReceitas = async (req: Request, res: Response): Promise<voi
           throw new Error(`Categoria "${row.categoria}" não encontrada`);
         }
 
+        let subcategoriaId;
+        if (row.subcategoria && categoria.subcategorias) {
+          const subcategoria = categoria.subcategorias.find(
+            (sub: any) => sub.nome === row.subcategoria && sub.ativo
+          );
+          if (subcategoria) {
+            subcategoriaId = subcategoria.id;
+          }
+        }
+
         await Receita.create({
           descricao: row.descricao,
           valor: parseFloat(row.valor),
           data: new Date(row.data),
           categoriaId: categoria._id,
+          subcategoriaId,
           recorrente: row.recorrente === true || row.recorrente === 'true',
           observacoes: row.observacoes
         });
