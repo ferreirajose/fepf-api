@@ -11,6 +11,7 @@ import cartaoRoutes from './routes/cartao.routes';
 import orcamentoRoutes from './routes/orcamento.routes';
 import importExportRoutes from './routes/import-export.routes';
 import financeiroRoutes from './routes/financeiro.routes';
+import chatbotRoutes from './routes/chatbot.routes';
 
 dotenv.config({ path: '.env.local' });
 
@@ -58,6 +59,7 @@ app.use('/api/cartoes', cartaoRoutes);
 app.use('/api/orcamentos', orcamentoRoutes);
 app.use('/api', importExportRoutes);
 app.use('/api/financeiro', financeiroRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
