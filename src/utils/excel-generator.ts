@@ -74,3 +74,44 @@ export const generateReceitasExcel = (receitas: any[]): Buffer => {
 
   return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 };
+
+interface CategoriaData {
+  nome: string;
+  tipo: string;
+  cor: string;
+  icone: string;
+  ativo: boolean;
+  subcategorias: string;
+}
+
+export const generateCategoriasExcel = (categorias: any[]): Buffer => {
+  const data: CategoriaData[] = categorias.map(categoria => ({
+    nome: categoria.nome,
+    tipo: categoria.tipo || '',
+    cor: categoria.cor || '',
+    icone: categoria.icone || '',
+    ativo: categoria.ativo,
+    subcategorias: categoria.subcategorias && categoria.subcategorias.length > 0
+      ? categoria.subcategorias
+          .filter((sub: any) => sub.ativo)
+          .map((sub: any) => sub.nome)
+          .join('; ')
+      : ''
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+
+  worksheet['!cols'] = [
+    { wch: 25 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 10 },
+    { wch: 50 }
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Categorias');
+
+  return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+};

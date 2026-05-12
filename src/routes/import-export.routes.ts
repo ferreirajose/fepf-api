@@ -4,7 +4,9 @@ import {
   importarDespesas,
   importarReceitas,
   exportarDespesas,
-  exportarReceitas
+  exportarReceitas,
+  importarCategorias,
+  exportarCategorias
 } from '../controllers/import-export.controller';
 
 const router = Router();
@@ -31,8 +33,12 @@ router.post('/import/despesas', upload.single('file'), importarDespesas);
 
 router.post('/import/receitas', upload.single('file'), importarReceitas);
 
+router.post('/import/categorias', upload.single('file'), importarCategorias);
+
 router.get('/export/despesas', exportarDespesas);
 
 router.get('/export/receitas', exportarReceitas);
+
+router.get('/export/categorias', exportarCategorias);
 
 export default router;
