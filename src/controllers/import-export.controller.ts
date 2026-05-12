@@ -299,16 +299,31 @@ export const importarCategorias = async (req: Request, res: Response): Promise<v
           throw new Error(`Categoria "${row.nome}" já existe`);
         }
 
+        const ativoValue = row.ativo;
+        let ativo = true;
+
+        if (ativoValue !== undefined && ativoValue !== null) {
+          if (typeof ativoValue === 'boolean') {
+            ativo = ativoValue;
+          } else if (typeof ativoValue === 'string') {
+            const ativoStr = ativoValue.toLowerCase().trim();
+            ativo = ativoStr === 'true' || ativoStr === '1' || ativoStr === 'yes' || ativoStr === 'sim';
+          } else {
+            ativo = Boolean(ativoValue);
+          }
+        }
+
         const categoriaData: any = {
           nome: row.nome,
-          ativo: row.ativo === true || row.ativo === 'true' || row.ativo === undefined
+          ativo: ativo
         };
 
-        if (row.tipo) {
-          if (!['receita', 'despesa'].includes(row.tipo)) {
+        if (row.tipo && row.tipo.trim() !== '') {
+          const tipoNormalizado = row.tipo.trim().toLowerCase();
+          if (!['receita', 'despesa'].includes(tipoNormalizado)) {
             throw new Error(`Tipo "${row.tipo}" inválido. Use "receita" ou "despesa"`);
           }
-          categoriaData.tipo = row.tipo;
+          categoriaData.tipo = tipoNormalizado;
         }
 
         if (row.cor) {
@@ -378,8 +393,9 @@ export const exportarCategorias = async (_req: Request, res: Response): Promise<
     const buffer = generateCategoriasExcel(categorias);
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=categorias.xlsx');
-    res.send(buffer);
+    res.setHeader('Content-Disposition', 'attachment; filename="categorias.xlsx"');
+    res.setHeader('Content-Length', buffer.length.toString());
+    res.status(200).send(buffer);
   } catch (error: any) {
     const response: ApiResponse = {
       success: false,

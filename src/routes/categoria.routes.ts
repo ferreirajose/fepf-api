@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator';
 import { validate } from '../middlewares/validator';
+import multer from 'multer';
 import {
   listarCategorias,
   buscarCategoriaPorId,
@@ -11,10 +12,36 @@ import {
   atualizarSubcategoria,
   deletarSubcategoria
 } from '../controllers/categoria.controller';
+import {
+  importarCategorias,
+  exportarCategorias
+} from '../controllers/import-export.controller';
 
 const router = Router();
 
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  },
+  fileFilter: (_req, file, cb) => {
+    if (
+      file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      file.mimetype === 'application/vnd.ms-excel'
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos Excel (.xlsx, .xls) são permitidos'));
+    }
+  }
+});
+
 router.get('/', listarCategorias);
+
+router.post('/import', upload.single('file'), importarCategorias);
+
+router.get('/export', exportarCategorias);
 
 router.get(
   '/:id',
