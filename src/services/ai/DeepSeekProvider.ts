@@ -116,11 +116,11 @@ Seja claro, objetivo e forneça insights úteis. Quando possível, sugira açõe
       }
 
       if (context.despesas && context.despesas.length > 0) {
-        prompt += `\n\nDespesas recentes (${context.despesas.length}):\n${JSON.stringify(context.despesas.slice(0, 10), null, 2)}`;
+        prompt += `\n\nDespesas (${context.despesas.length}):\n${JSON.stringify(context.despesas, null, 2)}`;
       }
 
       if (context.receitas && context.receitas.length > 0) {
-        prompt += `\n\nReceitas recentes (${context.receitas.length}):\n${JSON.stringify(context.receitas.slice(0, 10), null, 2)}`;
+        prompt += `\n\nReceitas (${context.receitas.length}):\n${JSON.stringify(context.receitas, null, 2)}`;
       }
 
       if (context.categorias && context.categorias.length > 0) {

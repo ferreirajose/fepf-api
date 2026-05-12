@@ -40,7 +40,6 @@ export class ChatbotService {
     try {
       const dataInicio = filtros?.dataInicio || new Date(new Date().setMonth(new Date().getMonth() - 1));
       const dataFim = filtros?.dataFim || new Date();
-      const limite = filtros?.limite || 20;
 
       const [despesas, receitas, categorias, cartoes, orcamentos] = await Promise.all([
         Despesa.find({
@@ -49,7 +48,6 @@ export class ChatbotService {
           .populate('categoriaId', 'nome cor icone')
           .populate('cartaoId', 'nome bandeira')
           .sort({ data: -1 })
-          .limit(limite)
           .lean(),
 
         Receita.find({
@@ -57,7 +55,6 @@ export class ChatbotService {
         })
           .populate('categoriaId', 'nome cor icone')
           .sort({ data: -1 })
-          .limit(limite)
           .lean(),
 
         Categoria.find({ ativo: true })
@@ -118,9 +115,7 @@ export class ChatbotService {
 
       const historico = await this.obterHistorico(sessionId, 10);
 
-      const context = await this.consultarDadosFinanceiros({
-        limite: 30
-      });
+      const context = await this.consultarDadosFinanceiros();
 
       const aiMessages: AIMessage[] = historico
         .filter(m => m._id?.toString() !== mensagemUsuario._id?.toString())
