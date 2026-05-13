@@ -4,7 +4,7 @@ import { ApiResponse } from '../types';
 
 export const listarDespesas = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { dataInicio, dataFim, categoriaId, cartaoId } = req.query;
+    const { dataInicio, dataFim, categoriaId, subcategoriaId, cartaoId, formaPagamento, pago } = req.query;
 
     const filtros: any = {};
 
@@ -15,10 +15,13 @@ export const listarDespesas = async (req: Request, res: Response): Promise<void>
     }
 
     if (categoriaId) filtros.categoriaId = categoriaId;
+    if (subcategoriaId) filtros.subcategoriaId = subcategoriaId;
     if (cartaoId) filtros.cartaoId = cartaoId;
+    if (formaPagamento) filtros.formaPagamento = formaPagamento;
+    if (pago !== undefined) filtros.pago = pago === 'true';
 
     const despesas = await Despesa.find(filtros)
-      .populate('categoriaId', 'nome tipo cor')
+      .populate('categoriaId', 'nome tipo cor icone subcategorias')
       .populate('cartaoId', 'nome bandeira')
       .sort({ data: -1 });
 

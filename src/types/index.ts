@@ -25,7 +25,9 @@ export interface FilterQuery {
   dataInicio?: string;
   dataFim?: string;
   categoriaId?: string;
+  subcategoriaId?: string;
   cartaoId?: string;
+  formaPagamento?: string;
 }
 
 export interface ImportResult {
