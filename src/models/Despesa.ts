@@ -13,11 +13,13 @@ export interface IDespesa extends Document {
   categoriaId: mongoose.Types.ObjectId;
   subcategoriaId?: string;
   cartaoId?: mongoose.Types.ObjectId;
+  contaId?: mongoose.Types.ObjectId;
   recorrente: boolean;
   observacoes?: string;
   formaPagamento?: string;
   pago?: boolean;
   localizacao?: ILocalizacao;
+  ativo: boolean;
 }
 
 const DespesaSchema = new Schema<IDespesa>(
@@ -49,6 +51,11 @@ const DespesaSchema = new Schema<IDespesa>(
     cartaoId: {
       type: Schema.Types.ObjectId,
       ref: 'Cartao'
+    },
+    contaId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Conta',
+      required: false
     },
     recorrente: {
       type: Boolean,
@@ -84,6 +91,10 @@ const DespesaSchema = new Schema<IDespesa>(
         trim: true,
         maxlength: [500, 'Endereço não pode ter mais de 500 caracteres']
       }
+    },
+    ativo: {
+      type: Boolean,
+      default: true
     }
   },
   {
@@ -94,6 +105,7 @@ const DespesaSchema = new Schema<IDespesa>(
 DespesaSchema.index({ data: 1 });
 DespesaSchema.index({ categoriaId: 1 });
 DespesaSchema.index({ cartaoId: 1 });
+DespesaSchema.index({ contaId: 1 });
 DespesaSchema.index({ 'localizacao.latitude': 1, 'localizacao.longitude': 1 });
 
 export default mongoose.model<IDespesa>('Despesa', DespesaSchema);

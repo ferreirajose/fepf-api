@@ -6,8 +6,10 @@ export interface IReceita extends Document {
   data: Date;
   categoriaId: mongoose.Types.ObjectId;
   subcategoriaId?: string;
+  contaId?: mongoose.Types.ObjectId;
   recorrente: boolean;
   observacoes?: string;
+  ativo: boolean;
 }
 
 const ReceitaSchema = new Schema<IReceita>(
@@ -36,6 +38,11 @@ const ReceitaSchema = new Schema<IReceita>(
       type: String,
       required: false
     },
+    contaId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Conta',
+      required: false
+    },
     recorrente: {
       type: Boolean,
       default: false
@@ -44,6 +51,10 @@ const ReceitaSchema = new Schema<IReceita>(
       type: String,
       trim: true,
       maxlength: [500, 'Observações não podem ter mais de 500 caracteres']
+    },
+    ativo: {
+      type: Boolean,
+      default: true
     }
   },
   {
@@ -53,5 +64,6 @@ const ReceitaSchema = new Schema<IReceita>(
 
 ReceitaSchema.index({ data: 1 });
 ReceitaSchema.index({ categoriaId: 1 });
+ReceitaSchema.index({ contaId: 1 });
 
 export default mongoose.model<IReceita>('Receita', ReceitaSchema);

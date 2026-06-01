@@ -4,37 +4,45 @@ import Receita from '../models/Receita';
 import Categoria from '../models/Categoria';
 import Cartao from '../models/Cartao';
 import Orcamento from '../models/Orcamento';
+import Conta from '../models/Conta';
+import Transferencia from '../models/Transferencia';
 import { ApiResponse } from '../types';
 
 export const gerarBackup = async (req: Request, res: Response): Promise<void> => {
   try {
     // Buscar todos os dados de todas as coleções
-    const [despesas, receitas, categorias, cartoes, orcamentos] = await Promise.all([
-      Despesa.find().populate('categoriaId').populate('cartaoId'),
-      Receita.find().populate('categoriaId'),
+    const [despesas, receitas, categorias, cartoes, orcamentos, contas, transferencias] = await Promise.all([
+      Despesa.find().populate('categoriaId').populate('cartaoId').populate('contaId'),
+      Receita.find().populate('categoriaId').populate('contaId'),
       Categoria.find(),
       Cartao.find(),
-      Orcamento.find().populate('categoriaId')
+      Orcamento.find().populate('categoriaId'),
+      Conta.find(),
+      Transferencia.find().populate('contaOrigemId').populate('contaDestinoId')
     ]);
 
     const backup = {
       metadata: {
         dataExportacao: new Date().toISOString(),
-        versao: '1.0',
+        versao: '2.0',
         totalRegistros: {
           despesas: despesas.length,
           receitas: receitas.length,
           categorias: categorias.length,
           cartoes: cartoes.length,
-          orcamentos: orcamentos.length
+          orcamentos: orcamentos.length,
+          contas: contas.length,
+          transferencias: transferencias.length
         }
       },
       data: {
         categorias: categorias,
         cartoes: cartoes,
+        contas: contas,
         despesas: despesas,
         receitas: receitas,
-        orcamentos: orcamentos
+        orcamentos: orcamentos,
+        transferencias: transferencias
       }
     };
 
@@ -68,9 +76,11 @@ export const restaurarBackup = async (req: Request, res: Response): Promise<void
     const resultados = {
       categorias: 0,
       cartoes: 0,
+      contas: 0,
       despesas: 0,
       receitas: 0,
-      orcamentos: 0
+      orcamentos: 0,
+      transferencias: 0
     };
 
     // Restaurar categorias primeiro (pois despesas/receitas dependem delas)
@@ -94,6 +104,18 @@ export const restaurarBackup = async (req: Request, res: Response): Promise<void
           { upsert: true, new: true }
         );
         resultados.cartoes++;
+      }
+    }
+
+    // Restaurar contas (antes de despesas/receitas/transferências)
+    if (data.contas && Array.isArray(data.contas)) {
+      for (const conta of data.contas) {
+        await Conta.findByIdAndUpdate(
+          conta._id,
+          conta,
+          { upsert: true, new: true }
+        );
+        resultados.contas++;
       }
     }
 
@@ -130,6 +152,18 @@ export const restaurarBackup = async (req: Request, res: Response): Promise<void
           { upsert: true, new: true }
         );
         resultados.orcamentos++;
+      }
+    }
+
+    // Restaurar transferências (por último, pois dependem de contas)
+    if (data.transferencias && Array.isArray(data.transferencias)) {
+      for (const transferencia of data.transferencias) {
+        await Transferencia.findByIdAndUpdate(
+          transferencia._id,
+          transferencia,
+          { upsert: true, new: true }
+        );
+        resultados.transferencias++;
       }
     }
 

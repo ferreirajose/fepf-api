@@ -13,6 +13,8 @@ import importExportRoutes from './routes/import-export.routes';
 import financeiroRoutes from './routes/financeiro.routes';
 import chatbotRoutes from './routes/chatbot.routes';
 import backupRoutes from './routes/backup.routes';
+import contaRoutes from './routes/conta.routes';
+import transferenciaRoutes from './routes/transferencia.routes';
 
 dotenv.config({ path: '.env.local' });
 
@@ -42,8 +44,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({
@@ -62,6 +64,8 @@ app.use('/api', importExportRoutes);
 app.use('/api/financeiro', financeiroRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/contas', contaRoutes);
+app.use('/api/transferencias', transferenciaRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
