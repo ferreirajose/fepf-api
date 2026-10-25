@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Receita from '../models/Receita';
 import { ApiResponse } from '../types';
+import { lerPaginacao, montarPaginacao } from '../utils/paginacao';
 
 export const listarReceitas = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -16,14 +17,27 @@ export const listarReceitas = async (req: Request, res: Response): Promise<void>
 
     if (categoriaId) filtros.categoriaId = categoriaId;
 
-    const receitas = await Receita.find(filtros)
+    const query = Receita.find(filtros)
       .populate('categoriaId', 'nome tipo cor')
       .sort({ data: -1 });
+
+    const paginacao = lerPaginacao(req);
+    if (paginacao) {
+      query.skip(paginacao.skip).limit(paginacao.limit);
+    }
+
+    const [receitas, total] = await Promise.all([
+      query,
+      paginacao ? Receita.countDocuments(filtros) : Promise.resolve(0)
+    ]);
 
     const response: ApiResponse = {
       success: true,
       data: receitas
     };
+    if (paginacao) {
+      response.paginacao = montarPaginacao(paginacao.page, paginacao.limit, total);
+    }
     res.json(response);
   } catch (error: any) {
     const response: ApiResponse = {
@@ -173,11 +187,12 @@ export const obterEstatisticas = async (req: Request, res: Response): Promise<vo
           as: 'categoria'
         }
       },
-      { $unwind: '$categoria' },
+      // Receitas de categorias removidas continuam contando no total
+      { $unwind: { path: '$categoria', preserveNullAndEmptyArrays: true } },
       {
         $project: {
           categoriaId: '$_id',
-          categoriaNome: '$categoria.nome',
+          categoriaNome: { $ifNull: ['$categoria.nome', 'Sem categoria'] },
           total: 1,
           quantidade: 1
         }

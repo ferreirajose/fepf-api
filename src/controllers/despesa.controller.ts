@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Despesa from '../models/Despesa';
 import { ApiResponse } from '../types';
+import { lerPaginacao, montarPaginacao } from '../utils/paginacao';
 
 export const listarDespesas = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -20,15 +21,28 @@ export const listarDespesas = async (req: Request, res: Response): Promise<void>
     if (formaPagamento) filtros.formaPagamento = formaPagamento;
     if (pago !== undefined) filtros.pago = pago === 'true';
 
-    const despesas = await Despesa.find(filtros)
+    const query = Despesa.find(filtros)
       .populate('categoriaId', 'nome tipo cor icone subcategorias')
       .populate('cartaoId', 'nome bandeira')
       .sort({ data: -1 });
+
+    const paginacao = lerPaginacao(req);
+    if (paginacao) {
+      query.skip(paginacao.skip).limit(paginacao.limit);
+    }
+
+    const [despesas, total] = await Promise.all([
+      query,
+      paginacao ? Despesa.countDocuments(filtros) : Promise.resolve(0)
+    ]);
 
     const response: ApiResponse = {
       success: true,
       data: despesas
     };
+    if (paginacao) {
+      response.paginacao = montarPaginacao(paginacao.page, paginacao.limit, total);
+    }
     res.json(response);
   } catch (error: any) {
     const response: ApiResponse = {
@@ -204,11 +218,12 @@ export const obterEstatisticas = async (req: Request, res: Response): Promise<vo
           as: 'categoria'
         }
       },
-      { $unwind: '$categoria' },
+      // Despesas de categorias removidas continuam contando no total
+      { $unwind: { path: '$categoria', preserveNullAndEmptyArrays: true } },
       {
         $project: {
           categoriaId: '$_id',
-          categoriaNome: '$categoria.nome',
+          categoriaNome: { $ifNull: ['$categoria.nome', 'Sem categoria'] },
           total: 1,
           quantidade: 1
         }
